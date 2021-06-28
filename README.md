@@ -8,3 +8,5 @@ A text chunk generator to divide a bunch of sentences after X words.
     - `source env/bin/activate`
 - download required packages
     - `pip3 -r requirements.txt`
+- download nltk extra data
+    - `python3 -m nltk.downloader punkt -d .`

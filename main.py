@@ -3,9 +3,6 @@ import argparse
 import nltk
 from typing import List
 
-nltk.download("punkt")
-
-
 def parse_from_stdin() -> str:
     text: str = ""
     for line in sys.stdin:
