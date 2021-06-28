@@ -82,6 +82,13 @@ def main():
         help="Specifies the delimiter that is used to concatenate the splitted texts.",
         default="\n",
     )
+    parser.add_argument(
+        "-o",
+        "--output",
+        type=str,
+        help="Sets the filename of the output. By default it is piped to stdout.",
+        default="",
+    )
     args = parser.parse_args()
 
     word_num: int = args.word_num
@@ -93,9 +100,15 @@ def main():
     else:
         text_in = parse_from_stdin()
 
-    output = divide_into_chunks(text=text_in, word_limit=word_num, delimiter=delimiter)
-
-    print(output)
+    out_text = divide_into_chunks(
+        text=text_in, word_limit=word_num, delimiter=delimiter
+    )
+    if len(args.output) == 0:
+        print(out_text, file=sys.stdout)
+    else:
+        with open(args.output, "w+") as f:
+            f.write(out_text)
+            return
 
 
 if __name__ == "__main__":
