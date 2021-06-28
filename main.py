@@ -15,10 +15,11 @@ def parse_from_stdin() -> str:
     return text
 
 
-def parse_from_file() -> str:
-    text: str = ""
-    text = clean_text(text)
-    return text
+def parse_from_file(filename: str) -> str:
+    with open(filename, "r") as f:
+        file_text = f.read()
+        file_text = clean_text(file_text)
+        return file_text
 
 
 def clean_text(text: str) -> str:
@@ -88,7 +89,7 @@ def main():
     text_in: str = ""
 
     if len(args.file) != 0:
-        text_in = parse_from_file()
+        text_in = parse_from_file(args.file)
     else:
         text_in = parse_from_stdin()
 
