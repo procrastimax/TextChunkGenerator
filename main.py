@@ -3,6 +3,7 @@ import argparse
 import nltk
 from typing import List
 
+
 def parse_from_stdin() -> str:
     text: str = ""
     for line in sys.stdin:
