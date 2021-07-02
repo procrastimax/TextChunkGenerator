@@ -1,5 +1,14 @@
 # TextChunkGenerator
-A text chunk generator to split a bunch of sentences after X words.
+This script shall make the translation of chunks of texts easier by dividing a large text into smaller chunks while preserving longer dialogues.
+The length of the smaller chunks is given by the number of words that shall be contained in these text-chunks.
+The number of words is a minimum value, so all chunks of text consist of at least this amount of words.
+
+Currently the text chunk generator tries to preserve dialogues.
+I.e., `"Hello! World! My name is Test!"` is going to be one sentence.
+Also: `"Hello! World! My name is Test!" said Test.` is going to be one sentence.
+If there are multiple direct-speech-containing sentences in sequence, they are guaranteed to be within one generated chunk of text.
+
+Direct speech is only recognized with the "-quotation marks!
 
 ## Installation
 - create virtual environment with *virtualenv*
