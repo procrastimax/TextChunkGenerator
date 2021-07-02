@@ -1,7 +1,16 @@
 import sys
 import argparse
 import nltk
-from typing import List
+import re
+from typing import List, Dict, Tuple
+
+# a regex to mark sentences as direct speech sentences
+# this regex only matches with sentences that start with a quotation mark and end with a quotation mark
+re_compl_direct_speech = re.compile('^".+"$')
+
+# a regex to mark sentences as direct speech sentences
+# this regex matches all sentences that contain two quotation marks
+re_part_direct_speech = re.compile('".+"')
 
 
 def parse_from_stdin() -> str:
@@ -23,11 +32,113 @@ def parse_from_file(filename: str) -> str:
 def clean_text(text: str) -> str:
     text = text.replace("\n", " ")
     text = text.replace("  ", " ")
+    text = text.strip()
     return text
 
 
-def divide_into_chunks(text: str, word_limit: int = 50, delimiter: str = "\n") -> str:
+def fix_direct_speech_sentences(sentence_list: List[str]):
+    """
+    This function fixes edge cases when handling direct speeches.
+    I.e., when a line of dialogue is recognized as a single sentence, but the sentence after this starts with a lowercase letter, we want to merge
+    these two sentences into one: "'Hello!' said Mrs. Person."
+
+    Also fix the case that multiple sentence within one direct speech does not get splitted.
+    I.e., "Hello! World!"
+
+    """
+    for i, sentence in enumerate(sentence_list):
+        if len(sentence) == 0:
+            continue
+
+        # concatenate direct speech sentence with other direct speech sentences
+        # find a sentence that starts with " but is not a complete direct speech sentence
+        if sentence.startswith('"') and not re_compl_direct_speech.match(sentence):
+            j: int = i + 1
+            # iterate over all sentences to find the closing quotation mark
+            while j < len(sentence_list):
+                # if a sentence contains a quotation mark and is also not a complete direct speech sentence
+                # then this sentence is probably the closing sentence
+                if '"' in sentence_list[j] and not re_compl_direct_speech.match(
+                    sentence
+                ):
+                    # merge all sentence we found so far
+                    for a in range(i + 1, j + 1):
+                        sentence_list[i] += " " + sentence_list[a]
+                        sentence_list[a] = ""
+                    break
+                j += 1
+
+    # clean out all empty list entries
+    # list copy not clean, but functional ;)
+    cpy_list = sentence_list.copy()
+    sentence_list.clear()
+    sentence_list = list(filter(lambda sentence: len(sentence) > 0, cpy_list))
+
+    # concatenate direct speech sentences with following subclauses
+    for i, sentence in enumerate(sentence_list):
+        if re_compl_direct_speech.match(sentence) and i < len(sentence_list) - 2:
+            if len(sentence_list[i + 1]) == 0:
+                continue
+            if sentence_list[i + 1][0].islower():
+                sentence_list[i] += " " + sentence_list[i + 1]
+                sentence_list[i + 1] = ""
+
+    return list(filter(lambda sentence: len(sentence) > 0, sentence_list))
+
+
+def preserve_dialogues(sentence_list: List[str]):
+    """
+    This function tries to preserve dialogues when parsing sentences.
+    This is done by merging all sentences that contain direct speech into one sentence.
+    This should prevent the splitting of these dialogues in the later steps.
+    """
+
+    direct_speech_tag_list: List[Tuple[str, bool]] = list()
+    sentence_list_new: List[str] = []
+
+    # mark sentences that contain direct speech
+    for sentence in sentence_list:
+        if re_part_direct_speech.match(sentence):
+            direct_speech_tag_list.append((sentence, True))
+        else:
+            direct_speech_tag_list.append((sentence, False))
+
+    # merge all neighboring direct speech sentences into one block
+    for i, tag_tuple in enumerate(direct_speech_tag_list):
+        if len(tag_tuple[0]) == 0:
+            continue
+        if tag_tuple[1] == False:
+            sentence_list_new.append(tag_tuple[0])
+        else:
+            sentence: str = ""
+            j: int = i + 1
+
+            # find last direct speech containing sentence
+            while j < len(direct_speech_tag_list):
+                if direct_speech_tag_list[j][1] == False:
+                    break
+                else:
+                    j += 1
+
+            # append all sentences until last direct speech containing sentence
+            for a in range(i, j):
+                sentence += " " + direct_speech_tag_list[a][0]
+                direct_speech_tag_list[a] = ("", False)
+            sentence_list_new.append(sentence)
+
+    for i, s in enumerate(sentence_list_new):
+        sentence_list_new[i] = s.strip()
+
+    return sentence_list_new
+
+
+def divide_into_chunks(text: str, word_limit: int = 50, delimiter: str = "\n\n") -> str:
     tokens_sent = nltk.sent_tokenize(text)
+
+    # fix uncorrect dialog sentences
+    tokens_sent = fix_direct_speech_sentences(tokens_sent)
+
+    tokens_sent = preserve_dialogues(tokens_sent)
 
     output_text: List[str] = []
     word_counter = 0
@@ -35,6 +146,7 @@ def divide_into_chunks(text: str, word_limit: int = 50, delimiter: str = "\n") -
     is_init = True
 
     for sentence in tokens_sent:
+
         # slow af, but works
         word_tokens = nltk.word_tokenize(sentence)
         word_tokens = [word for word in word_tokens if word.isalpha()]
@@ -78,7 +190,7 @@ def main():
         "--delimiter",
         type=str,
         help="Specifies the delimiter that is used to concatenate the splitted texts.",
-        default="\n",
+        default="\n\n",
     )
     parser.add_argument(
         "-o",
@@ -103,6 +215,7 @@ def main():
     )
     if len(args.output) == 0:
         print(out_text, file=sys.stdout)
+        pass
     else:
         with open(args.output, "w+") as f:
             f.write(out_text)
