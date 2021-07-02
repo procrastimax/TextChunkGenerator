@@ -1,5 +1,5 @@
 # TextChunkGenerator
-A text chunk generator to divide a bunch of sentences after X words.
+A text chunk generator to split a bunch of sentences after X words.
 
 ## Installation
 - create virtual environment with *virtualenv*
