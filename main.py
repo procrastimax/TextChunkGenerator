@@ -132,13 +132,14 @@ def preserve_dialogues(sentence_list: List[str]):
     return sentence_list_new
 
 
-def divide_into_chunks(text: str, word_limit: int = 50, delimiter: str = "\n\n") -> str:
+def divide_into_chunks(text: str, word_limit: int = 50, delimiter: str = "\n\n", is_preserving_dialogues : bool = False) -> str:
     tokens_sent = nltk.sent_tokenize(text)
 
     # fix uncorrect dialog sentences
     tokens_sent = fix_direct_speech_sentences(tokens_sent)
 
-    tokens_sent = preserve_dialogues(tokens_sent)
+    if is_preserving_dialogues:
+        tokens_sent = preserve_dialogues(tokens_sent)
 
     output_text: List[str] = []
     word_counter = 0
@@ -199,11 +200,18 @@ def main():
         help="Sets the filename of the output. By default it is piped to stdout.",
         default="",
     )
+    parser.add_argument(
+        "-p",
+        "--preserve",
+        action="store_true",
+        help="Flag that indicates if all dialogues shall be preserved."
+    )
     args = parser.parse_args()
 
     word_num: int = args.word_num
     delimiter: str = args.delimiter
     text_in: str = ""
+    is_preserving_dialogue : bool = args.preserve
 
     if len(args.file) != 0:
         text_in = parse_from_file(args.file)
@@ -211,7 +219,7 @@ def main():
         text_in = parse_from_stdin()
 
     out_text = divide_into_chunks(
-        text=text_in, word_limit=word_num, delimiter=delimiter
+        text=text_in, word_limit=word_num, delimiter=delimiter, is_preserving_dialogues=is_preserving_dialogue
     )
     if len(args.output) == 0:
         print(out_text, file=sys.stdout)
