@@ -132,7 +132,12 @@ def preserve_dialogues(sentence_list: List[str]):
     return sentence_list_new
 
 
-def divide_into_chunks(text: str, word_limit: int = 50, delimiter: str = "\n\n", is_preserving_dialogues : bool = False) -> str:
+def divide_into_chunks(
+    text: str,
+    word_limit: int = 50,
+    delimiter: str = "\n\n",
+    is_preserving_dialogues: bool = False,
+) -> str:
     tokens_sent = nltk.sent_tokenize(text)
 
     # fix uncorrect dialog sentences
@@ -184,7 +189,7 @@ def main():
         "--word_num",
         type=int,
         help="Specifies the number of words that shall be used to divide the text into.",
-        default=50,
+        default=100,
     )
     parser.add_argument(
         "-d",
@@ -204,14 +209,14 @@ def main():
         "-p",
         "--preserve",
         action="store_true",
-        help="Flag that indicates if all dialogues shall be preserved."
+        help="Flag that indicates if all dialogues shall be preserved.",
     )
     args = parser.parse_args()
 
     word_num: int = args.word_num
     delimiter: str = args.delimiter
     text_in: str = ""
-    is_preserving_dialogue : bool = args.preserve
+    is_preserving_dialogue: bool = args.preserve
 
     if len(args.file) != 0:
         text_in = parse_from_file(args.file)
@@ -219,7 +224,10 @@ def main():
         text_in = parse_from_stdin()
 
     out_text = divide_into_chunks(
-        text=text_in, word_limit=word_num, delimiter=delimiter, is_preserving_dialogues=is_preserving_dialogue
+        text=text_in,
+        word_limit=word_num,
+        delimiter=delimiter,
+        is_preserving_dialogues=is_preserving_dialogue,
     )
     if len(args.output) == 0:
         print(out_text, file=sys.stdout)
