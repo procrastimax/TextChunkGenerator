@@ -6,7 +6,8 @@ The number of words is a minimum value, so all chunks of text consist of at leas
 Currently the text chunk generator tries to preserve dialogues.
 I.e., `"Hello! World! My name is Test!"` is going to be one sentence.
 Also: `"Hello! World! My name is Test!" said Test.` is going to be one sentence.
-If there are multiple direct-speech-containing sentences in sequence, they are guaranteed to be within one generated chunk of text.
+
+If the script is run with the `-p` parameter, multiple direct-speech-containing sentences in sequence are guaranteed to be within one generated chunk of text.
 
 Direct speech is only recognized with the "-quotation marks!
 
