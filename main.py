@@ -4,7 +4,7 @@ import sys
 import argparse
 import nltk
 import re
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 
 # a regex to mark sentences as direct speech sentences
 # this regex only matches with sentences that start with a quotation mark and end with a quotation mark
@@ -134,12 +134,43 @@ def preserve_dialogues(sentence_list: List[str]):
     return sentence_list_new
 
 
+def divide_into_sentences(
+    text: str, num_of_senteces: int, is_reversed: bool = False
+) -> str:
+    """
+    This function divides the text into sentences and returns either the first X sentences or the last X sentences.
+    """
+    tokens_sent = nltk.sent_tokenize(text)
+
+    # fix uncorrect dialog sentences
+    tokens_sent = fix_direct_speech_sentences(tokens_sent)
+
+    output_text: List[str] = []
+
+    if not is_reversed:
+        for i, sentence in enumerate(tokens_sent):
+            if i < num_of_senteces:
+                output_text.append(sentence)
+            else:
+                break
+    else:
+        for i, sentence in enumerate(reversed(tokens_sent)):
+            if i < num_of_senteces:
+                output_text.append(sentence)
+            else:
+                break
+        output_text.reverse()
+
+    return " ".join(output_text)
+
+
 def divide_into_chunks(
     text: str,
     word_limit: int = 50,
     delimiter: str = "\n\n",
     is_preserving_dialogues: bool = False,
 ) -> str:
+
     tokens_sent = nltk.sent_tokenize(text)
 
     # fix uncorrect dialog sentences
@@ -176,6 +207,43 @@ def divide_into_chunks(
 
 
 def main():
+    args = parse_arguments()
+
+    word_num: int = args.word_num
+    delimiter: str = args.delimiter
+    text_in: str = ""
+    is_preserving_dialogue: bool = args.preserve
+    is_sentence_reverse: bool = args.reverse
+
+    if len(args.file) != 0:
+        text_in = parse_from_file(args.file)
+    else:
+        text_in = parse_from_stdin()
+
+    out_text: str = ""
+
+    if args.sentence > 0:
+        out_text = divide_into_sentences(
+            text=text_in, num_of_senteces=args.sentence, is_reversed=is_sentence_reverse
+        )
+    else:
+        out_text = divide_into_chunks(
+            text=text_in,
+            word_limit=word_num,
+            delimiter=delimiter,
+            is_preserving_dialogues=is_preserving_dialogue,
+        )
+
+    if len(args.output) == 0:
+        print(out_text, file=sys.stdout)
+        pass
+    else:
+        with open(args.output, "w+") as f:
+            f.write(out_text)
+            return
+
+
+def parse_arguments():
     parser = argparse.ArgumentParser(
         "A program to divide piped in text into chunks of text based on number of words while still preservering sentences. The result is written to an ouput file.\nNote: This program does not properly handles unicode chars."
     )
@@ -213,31 +281,21 @@ def main():
         action="store_true",
         help="Flag that indicates if all dialogues shall be preserved.",
     )
-    args = parser.parse_args()
-
-    word_num: int = args.word_num
-    delimiter: str = args.delimiter
-    text_in: str = ""
-    is_preserving_dialogue: bool = args.preserve
-
-    if len(args.file) != 0:
-        text_in = parse_from_file(args.file)
-    else:
-        text_in = parse_from_stdin()
-
-    out_text = divide_into_chunks(
-        text=text_in,
-        word_limit=word_num,
-        delimiter=delimiter,
-        is_preserving_dialogues=is_preserving_dialogue,
+    parser.add_argument(
+        "-s",
+        "--sentence",
+        type=int,
+        help="Returns just the first N sentences from the given text. This parameter is only used if the passed value is >= 1. Can be combined with '-r'.",
+        default=-1,
     )
-    if len(args.output) == 0:
-        print(out_text, file=sys.stdout)
-        pass
-    else:
-        with open(args.output, "w+") as f:
-            f.write(out_text)
-            return
+    parser.add_argument(
+        "-r",
+        "--reverse",
+        action="store_true",
+        help="This flag only effects the '-s' parameter. If this flag is set, than the returned sentences are counted from the back of the text.",
+    )
+
+    return parser.parse_args()
 
 
 if __name__ == "__main__":
