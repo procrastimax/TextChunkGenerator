@@ -135,7 +135,7 @@ def preserve_dialogues(sentence_list: List[str]):
 
 
 def divide_into_sentences(
-    text: str, num_of_senteces: int, is_reversed: bool = False
+    text: str, num_of_senteces: int, is_reversed: bool = False, offset: int = 0
 ) -> str:
     """
     This function divides the text into sentences and returns either the first X sentences or the last X sentences.
@@ -149,13 +149,19 @@ def divide_into_sentences(
 
     if not is_reversed:
         for i, sentence in enumerate(tokens_sent):
-            if i < num_of_senteces:
+            if i < offset:
+                continue
+
+            if i < num_of_senteces + offset:
                 output_text.append(sentence)
             else:
                 break
     else:
         for i, sentence in enumerate(reversed(tokens_sent)):
-            if i < num_of_senteces:
+            if i < offset:
+                continue
+
+            if i < num_of_senteces + offset:
                 output_text.append(sentence)
             else:
                 break
@@ -224,7 +230,10 @@ def main():
 
     if args.sentence > 0:
         out_text = divide_into_sentences(
-            text=text_in, num_of_senteces=args.sentence, is_reversed=is_sentence_reverse
+            text=text_in,
+            num_of_senteces=args.sentence,
+            is_reversed=is_sentence_reverse,
+            offset=args.offset,
         )
     else:
         out_text = divide_into_chunks(
@@ -294,7 +303,13 @@ def parse_arguments():
         action="store_true",
         help="This flag only effects the '-s' parameter. If this flag is set, than the returned sentences are counted from the back of the text.",
     )
-
+    parser.add_argument(
+        "-of",
+        "--offset",
+        type=int,
+        help="Sets an offset for th '-s' parameter. Meaning that the returned sentences start after a specific number of sentences. This also works for the '-r' flag.",
+        default=0,
+    )
     return parser.parse_args()
 
 
